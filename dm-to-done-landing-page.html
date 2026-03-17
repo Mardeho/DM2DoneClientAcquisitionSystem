@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DM to Done — LinkedIn Client Acquisition System | Jori O'Neale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  /* ─── TOKENS ─────────────────────────────────────────── */
+  :root {
+    --navy:    #0D1B2A;
+    --navy2:   #132233;
+    --navy3:   #1A2E44;
+    --gold:    #C9A84C;
+    --gold2:   #E2C47A;
+    --gold3:   #F5E4B4;
+    --cream:   #FDF8F0;
+    --white:   #FFFFFF;
+    --muted:   #8A9BB0;
+    --border:  rgba(201,168,76,0.25);
+    --serif:   'Cormorant Garamond', Georgia, serif;
+    --sans:    'Outfit', sans-serif;
+  }
+
+  /* ─── RESET ──────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--navy);
+    color: var(--white);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; text-decoration: none; }
+
+  /* ─── NOISE TEXTURE OVERLAY ──────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* ─── ANIMATIONS ─────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(32px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); }
+    50%       { box-shadow: 0 0 0 12px rgba(201,168,76,0); }
+  }
+  @keyframes lineGrow {
+    from { width: 0; }
+    to   { width: 60px; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-8px); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── UTILITY ────────────────────────────────────────── */
+  .container { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  .container--wide { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+  .gold-line {
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 0 auto;
+    width: 100%;
+  }
+  .tag {
+    display: inline-block;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--border);
+    padding: 6px 16px;
+    border-radius: 2px;
+    background: rgba(201,168,76,0.06);
+  }
+
+  /* ─── NAV ────────────────────────────────────────────── */
+  .nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 900;
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(13,27,42,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    animation: fadeIn 0.8s ease both;
+  }
+  .nav-logo {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-cta {
+    background: var(--gold);
+    color: var(--navy);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 24px;
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .nav-cta:hover { background: var(--gold2); transform: translateY(-1px); }
+
+  /* ─── HERO ───────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 120px 28px 80px;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(201,168,76,0.08) 0%, transparent 70%),
+                linear-gradient(180deg, var(--navy) 0%, var(--navy2) 100%);
+  }
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 860px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .hero-eyebrow {
+    animation: fadeUp 0.8s ease 0.1s both;
+    margin-bottom: 28px;
+  }
+  .hero-headline {
+    font-family: var(--serif);
+    font-size: clamp(42px, 7vw, 86px);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    animation: fadeUp 0.8s ease 0.25s both;
+    margin-bottom: 12px;
+  }
+  .hero-headline em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  .hero-sub-headline {
+    font-family: var(--serif);
+    font-size: clamp(20px, 3vw, 28px);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--gold3);
+    animation: fadeUp 0.8s ease 0.35s both;
+    margin-bottom: 36px;
+  }
+  .hero-divider {
+    width: 0;
+    height: 1px;
+    background: var(--gold);
+    margin: 0 auto 36px;
+    animation: lineGrow 0.8s ease 0.5s both;
+  }
+  .hero-body {
+    font-size: 18px;
+    color: rgba(255,255,255,0.78);
+    max-width: 620px;
+    margin: 0 auto 48px;
+    line-height: 1.8;
+    animation: fadeUp 0.8s ease 0.55s both;
+  }
+  .hero-cta-wrap {
+    animation: fadeUp 0.8s ease 0.7s both;
+  }
+  .btn-primary {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold) 0%, #B8903A 100%);
+    color: var(--navy);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 20px 52px;
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+    animation: pulse 2.5s ease-in-out 1.5s infinite;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(201,168,76,0.35);
+  }
+  .btn-ghost {
+    display: inline-block;
+    background: transparent;
+    color: var(--gold);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 20px 52px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    text-decoration: none;
+  }
+  .btn-ghost:hover { background: rgba(201,168,76,0.06); border-color: var(--gold); }
+  .hero-note {
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    animation: fadeUp 0.8s ease 0.85s both;
+  }
+  .hero-scroll {
+    position: absolute;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: float 2.5s ease-in-out infinite, fadeIn 1s ease 1.5s both;
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-align: center;
+    z-index: 2;
+  }
+  .hero-scroll::before {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(transparent, var(--gold));
+    margin: 0 auto 10px;
+  }
+
+  /* ─── PAIN SECTION ───────────────────────────────────── */
+  .pain {
+    padding: 100px 0;
+    background: linear-gradient(180deg, var(--navy2) 0%, var(--navy3) 100%);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .pain-intro {
+    text-align: center;
+    margin-bottom: 64px;
+  }
+  .section-label {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+    display: block;
+  }
+  .section-headline {
+    font-family: var(--serif);
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+  .section-headline em { font-style: italic; color: var(--gold); }
+  .section-body {
+    font-size: 17px;
+    color: rgba(255,255,255,0.7);
+    max-width: 580px;
+    margin: 0 auto;
+    line-height: 1.8;
+  }
+  .pain-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+  .pain-card {
+    background: var(--navy2);
+    padding: 40px 32px;
+    position: relative;
+  }
+  .pain-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .pain-card:hover::before { opacity: 1; }
+  .pain-icon {
+    font-size: 28px;
+    margin-bottom: 16px;
+  }
+  .pain-card h3 {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--white);
+  }
+  .pain-card p {
+    font-size: 15px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.7;
+  }
+
+  /* ─── BRIDGE ─────────────────────────────────────────── */
+  .bridge {
+    padding: 100px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .bridge-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(201,168,76,0.07) 0%, transparent 70%);
+  }
+  .bridge-quote {
+    font-family: var(--serif);
+    font-size: clamp(26px, 4vw, 44px);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--white);
+    max-width: 740px;
+    margin: 0 auto 32px;
+    line-height: 1.35;
+    position: relative;
+    z-index: 2;
+  }
+  .bridge-quote strong {
+    font-weight: 700;
+    font-style: normal;
+    color: var(--gold);
+  }
+  .bridge-attr {
+    font-size: 14px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ─── INTRO SECTION ──────────────────────────────────── */
+  .intro {
+    padding: 100px 0;
+    background: var(--navy);
+  }
+  .intro-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+  @media (max-width: 700px) { .intro-inner { grid-template-columns: 1fr; gap: 48px; } }
+  .intro-badge {
+    display: inline-block;
+    font-family: var(--serif);
+    font-size: 120px;
+    font-weight: 700;
+    color: rgba(201,168,76,0.08);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+  .intro-text .tag { margin-bottom: 24px; }
+  .intro-text h2 {
+    font-family: var(--serif);
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 24px;
+  }
+  .intro-text h2 em { font-style: italic; color: var(--gold); }
+  .intro-text p {
+    font-size: 16px;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.8;
+    margin-bottom: 16px;
+  }
+
+  /* ─── PIPELINE SECTION ───────────────────────────────── */
+  .pipeline {
+    padding: 100px 0;
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy2) 100%);
+    border-top: 1px solid var(--border);
+  }
+  .pipeline-header { text-align: center; margin-bottom: 64px; }
+  .pipeline-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+  .pipeline-steps::before {
+    content: '';
+    position: absolute;
+    left: 38px;
+    top: 48px;
+    bottom: 48px;
+    width: 1px;
+    background: linear-gradient(180deg, var(--gold), rgba(201,168,76,0.1));
+  }
+  @media (max-width: 600px) { .pipeline-steps::before { display: none; } }
+  .pipeline-step {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    padding: 32px 0;
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    transition: background 0.2s;
+    padding-left: 0;
+  }
+  .pipeline-step:last-child { border-bottom: none; }
+  .step-num {
+    flex-shrink: 0;
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: var(--navy3);
+    border: 1px solid var(--gold);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--gold);
+    position: relative;
+    z-index: 2;
+  }
+  .step-num span {
+    font-family: var(--sans);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    line-height: 1;
+    margin-top: 2px;
+  }
+  .step-body { flex: 1; padding-top: 12px; }
+  .step-body h3 {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+  .step-body p {
+    font-size: 15px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.7;
+    max-width: 600px;
+  }
+
+  /* ─── WHAT'S INSIDE ──────────────────────────────────── */
+  .inside {
+    padding: 100px 0;
+    background: var(--navy2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .inside-header { text-align: center; margin-bottom: 64px; }
+  .inside-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+  }
+  .inside-card {
+    background: var(--navy);
+    border: 1px solid var(--border);
+    padding: 36px 32px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s, border-color 0.25s;
+  }
+  .inside-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top left, rgba(201,168,76,0.06), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .inside-card:hover { transform: translateY(-4px); border-color: rgba(201,168,76,0.5); }
+  .inside-card:hover::after { opacity: 1; }
+  .inside-num {
+    font-family: var(--serif);
+    font-size: 64px;
+    font-weight: 700;
+    color: rgba(201,168,76,0.12);
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+  .inside-card h3 {
+    font-family: var(--serif);
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 10px;
+  }
+  .inside-card p {
+    font-size: 15px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.7;
+  }
+  .inside-icon {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+
+  /* ─── FOR / NOT FOR ──────────────────────────────────── */
+  .fit {
+    padding: 100px 0;
+    background: var(--navy);
+  }
+  .fit-header { text-align: center; margin-bottom: 64px; }
+  .fit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  @media (max-width: 640px) { .fit-grid { grid-template-columns: 1fr; } }
+  .fit-col { }
+  .fit-col-label {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    margin-bottom: 24px;
+    display: inline-block;
+  }
+  .fit-col--yes .fit-col-label {
+    background: rgba(201,168,76,0.12);
+    color: var(--gold);
+    border-left: 3px solid var(--gold);
+  }
+  .fit-col--no .fit-col-label {
+    background: rgba(138,155,176,0.1);
+    color: var(--muted);
+    border-left: 3px solid var(--muted);
+  }
+  .fit-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    font-size: 16px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.6;
+  }
+  .fit-item-icon { flex-shrink: 0; font-size: 18px; margin-top: 2px; }
+
+  /* ─── PRICE / OFFER ──────────────────────────────────── */
+  .offer {
+    padding: 120px 0;
+    background: linear-gradient(180deg, var(--navy2) 0%, var(--navy) 100%);
+    border-top: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .offer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(201,168,76,0.07), transparent 65%);
+  }
+  .offer-box {
+    position: relative;
+    z-index: 2;
+    max-width: 680px;
+    margin: 0 auto;
+    background: var(--navy3);
+    border: 1px solid var(--gold);
+    padding: 64px 60px;
+    text-align: center;
+  }
+  @media (max-width: 600px) { .offer-box { padding: 48px 28px; } }
+  .offer-box::before, .offer-box::after {
+    content: '';
+    position: absolute;
+    width: 60px; height: 60px;
+    border-color: var(--gold);
+    border-style: solid;
+  }
+  .offer-box::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+  .offer-box::after  { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+  .offer-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+  .offer-title {
+    font-family: var(--serif);
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.1;
+  }
+  .offer-subtitle {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-style: italic;
+    color: var(--gold3);
+    margin-bottom: 40px;
+  }
+  .offer-includes {
+    text-align: left;
+    margin-bottom: 40px;
+    border-top: 1px solid var(--border);
+    padding-top: 32px;
+  }
+  .offer-includes-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .offer-item {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+    font-size: 16px;
+    color: rgba(255,255,255,0.85);
+  }
+  .offer-item:last-child { border-bottom: none; }
+  .offer-item-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(201,168,76,0.15);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 12px;
+  }
+  .offer-price-wrap {
+    margin: 32px 0 40px;
+    padding: 28px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .offer-price {
+    font-family: var(--serif);
+    font-size: 72px;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .offer-price-note {
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+  .offer-delivery {
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 8px;
+  }
+  .offer-cta {
+    width: 100%;
+    display: block;
+    background: linear-gradient(135deg, var(--gold) 0%, #B8903A 100%);
+    color: var(--navy);
+    font-family: var(--sans);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 22px 40px;
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    animation: pulse 2.5s ease-in-out 2s infinite;
+    text-align: center;
+    text-decoration: none;
+  }
+  .offer-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(201,168,76,0.35);
+  }
+  .offer-guarantee {
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .offer-guarantee strong { color: rgba(255,255,255,0.6); }
+
+  /* ─── NOT INCLUDED ───────────────────────────────────── */
+  .boundaries {
+    padding: 80px 0;
+    background: var(--navy2);
+    border-top: 1px solid var(--border);
+  }
+  .boundaries-inner {
+    max-width: 680px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .boundaries-inner h2 {
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 700;
+    margin-bottom: 32px;
+  }
+  .not-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .not-item {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    font-size: 16px;
+    color: rgba(255,255,255,0.6);
+  }
+  .not-item-x {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(138,155,176,0.12);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ─── FINAL CTA ──────────────────────────────────────── */
+  .final-cta {
+    padding: 120px 28px;
+    text-align: center;
+    background: var(--navy);
+    border-top: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .final-cta-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 70% at 50% 50%, rgba(201,168,76,0.06), transparent);
+  }
+  .final-cta-content { position: relative; z-index: 2; }
+  .final-cta h2 {
+    font-family: var(--serif);
+    font-size: clamp(36px, 5vw, 60px);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+  .final-cta h2 em { font-style: italic; color: var(--gold); }
+  .final-cta p {
+    font-size: 18px;
+    color: rgba(255,255,255,0.7);
+    max-width: 540px;
+    margin: 0 auto 48px;
+    line-height: 1.8;
+  }
+
+  /* ─── FOOTER ─────────────────────────────────────────── */
+  footer {
+    background: var(--navy);
+    border-top: 1px solid var(--border);
+    padding: 40px 28px;
+    text-align: center;
+  }
+  footer p {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+  footer strong { color: rgba(255,255,255,0.45); }
+
+  /* ─── RESPONSIVE ─────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .nav { padding: 16px 20px; }
+    .nav-logo { font-size: 17px; }
+    .nav-cta { padding: 9px 18px; font-size: 12px; }
+    .hero { padding: 100px 20px 80px; }
+    .pipeline-steps::before { left: 32px; }
+    .step-num { width: 64px; height: 64px; font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">DM <span>to Done</span></div>
+  <a href="#offer" class="nav-cta">Get the System — $897</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span class="tag">LinkedIn Client Acquisition System</span>
+    </div>
+    <h1 class="hero-headline">
+      DM to Done:<br /><em>The System That Turns</em><br />Conversations Into Clients
+    </h1>
+    <div class="hero-divider"></div>
+    <p class="hero-sub-headline">
+      No ads. No setters. No complicated funnels.
+    </p>
+    <p class="hero-body">
+      A complete LinkedIn client acquisition system for coaches, consultants, creatives, and service providers who want to turn conversations into paying clients — consistently.
+    </p>
+    <div class="hero-cta-wrap">
+      <a href="#offer" class="btn-primary">Get DM to Done — $897</a>
+    </div>
+    <p class="hero-note">Instant Google Drive access &nbsp;·&nbsp; Self-paced &nbsp;·&nbsp; Delegate-ready</p>
+  </div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- PAIN SECTION -->
+<section class="pain">
+  <div class="container">
+    <div class="pain-intro reveal">
+      <span class="section-label">Sound Familiar?</span>
+      <h2 class="section-headline">You're Active on LinkedIn.<br/><em>But the DMs Aren't Converting.</em></h2>
+      <p class="section-body">You're posting. You're connecting. Maybe you're even getting responses. But somewhere between "Thanks for connecting!" and "Can we hop on a call?" — the conversation dies.</p>
+    </div>
+    <div class="pain-grid reveal">
+      <div class="pain-card">
+        <div class="pain-icon">💬</div>
+        <h3>Connections Without Conversations</h3>
+        <p>Your inbox fills up with accepted requests that go nowhere. The follow-up feels awkward and the pitch feels forced.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">📅</div>
+        <h3>Activity Without Bookings</h3>
+        <p>You're showing up every day, engaging, posting content — but your calendar still has open slots.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">🔁</div>
+        <h3>No Repeatable System</h3>
+        <p>What works one week doesn't work the next. There's no clear process, no consistent pipeline, no predictable results.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BRIDGE -->
+<section class="bridge">
+  <div class="bridge-bg"></div>
+  <div class="container">
+    <p class="bridge-quote reveal">
+      "You don't need a bigger audience.<br/>You don't need better content.<br/>You need a <strong>system for converting<br/>the attention you already have.</strong>"
+    </p>
+    <p class="bridge-attr reveal">— DM to Done Framework</p>
+  </div>
+</section>
+
+<!-- INTRO -->
+<section class="intro">
+  <div class="container--wide">
+    <div class="intro-inner">
+      <div class="intro-badge reveal">DM</div>
+      <div class="intro-text reveal">
+        <span class="tag">The Solution</span>
+        <h2>A Complete System for<br/><em>LinkedIn Client Acquisition</em></h2>
+        <p>DM to Done is a complete, step-by-step toolkit designed around one simple premise: authentic conversations close clients. You just need to know how to start them, move them, and convert them.</p>
+        <p>This is a DIY system — meaning you implement it yourself, or you hand it off entirely to your VA using the included Delegation SOP. Either way, the system does the heavy lifting.</p>
+        <p style="color: var(--gold3); font-family: var(--serif); font-style: italic; font-size: 18px; margin-top: 24px;">Everything you need. Nothing you don't.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section class="pipeline">
+  <div class="container">
+    <div class="pipeline-header reveal">
+      <span class="section-label">The Method</span>
+      <h2 class="section-headline">The 5-Stage <em>Client Pipeline</em></h2>
+      <p class="section-body">Every conversation runs through the same five stages. Once you know the system, you'll never wonder what to say next.</p>
+    </div>
+    <div class="pipeline-steps">
+      <div class="pipeline-step reveal">
+        <div class="step-num">1<span>Find</span></div>
+        <div class="step-body">
+          <h3>Find — Build Your Ideal Client List</h3>
+          <p>Use LinkedIn's search filters to identify exactly who to connect with. Stop scrolling randomly — start targeting strategically with the included Client Targeting Workbook.</p>
+        </div>
+      </div>
+      <div class="pipeline-step reveal">
+        <div class="step-num">2<span>Connect</span></div>
+        <div class="step-body">
+          <h3>Connect — Send the Right Request</h3>
+          <p>First impressions set the tone. Use the authority, curiosity, or referral-style connection request templates to get accepted — and remembered.</p>
+        </div>
+      </div>
+      <div class="pipeline-step reveal">
+        <div class="step-num">3<span>Converse</span></div>
+        <div class="step-body">
+          <h3>Converse — Open Authentic Dialogue</h3>
+          <p>No pitching in the opener. Use the conversation starter templates to build genuine rapport that makes the eventual call invitation feel natural, not transactional.</p>
+        </div>
+      </div>
+      <div class="pipeline-step reveal">
+        <div class="step-num">4<span>Invite</span></div>
+        <div class="step-body">
+          <h3>Invite — Offer the Clarity Call</h3>
+          <p>When the moment is right, use the call invitation templates to move the conversation forward — without pressure, without awkwardness, without being "salesy."</p>
+        </div>
+      </div>
+      <div class="pipeline-step reveal">
+        <div class="step-num">5<span>Convert</span></div>
+        <div class="step-body">
+          <h3>Convert — Lead the Call, Close the Client</h3>
+          <p>Walk into every discovery call with a proven framework. Handle objections with confidence and follow up within 24 hours with the included scripts.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT'S INSIDE -->
+<section class="inside">
+  <div class="container--wide">
+    <div class="inside-header reveal">
+      <span class="section-label">What's Inside</span>
+      <h2 class="section-headline">Everything in <em>the System</em></h2>
+      <p class="section-body">Seven complete resources — strategy, templates, tools, and SOPs — delivered instantly to your Google Drive.</p>
+    </div>
+    <div class="inside-grid">
+      <div class="inside-card reveal">
+        <div class="inside-icon">📘</div>
+        <div class="inside-num">01</div>
+        <h3>The DM to Done Framework</h3>
+        <p>The complete strategy behind the system — how the LinkedIn pipeline works, the conversation flow, and how to avoid the most common mistakes.</p>
+      </div>
+      <div class="inside-card reveal">
+        <div class="inside-icon">🎯</div>
+        <div class="inside-num">02</div>
+        <h3>Client Targeting Workbook</h3>
+        <p>Define your ideal client, configure your LinkedIn search filters, identify profile signals, and build your first lead list with confidence.</p>
+      </div>
+      <div class="inside-card reveal">
+        <div class="inside-icon">✉️</div>
+        <div class="inside-num">03</div>
+        <h3>DM Scripts & Templates</h3>
+        <p>15+ ready-to-use templates covering connection requests, conversation openers, call invitations, and follow-up messages for every stage.</p>
+      </div>
+      <div class="inside-card reveal">
+        <div class="inside-icon">🔄</div>
+        <div class="inside-num">04</div>
+        <h3>Visual Pipeline Map</h3>
+        <p>A one-page reference of your entire client acquisition journey — from first connection to paying client — so you always know exactly what to do next.</p>
+      </div>
+      <div class="inside-card reveal">
+        <div class="inside-icon">📋</div>
+        <div class="inside-num">05</div>
+        <h3>VA Delegation SOP</h3>
+        <p>A full standard operating procedure so you can hand off the entire outreach process to a virtual assistant — with escalation rules built in.</p>
+      </div>
+      <div class="inside-card reveal">
+        <div class="inside-icon">✅</div>
+        <div class="inside-num">06</div>
+        <h3>4-Week Implementation Checklist</h3>
+        <p>Your week-by-week rollout plan so you're not staring at a folder wondering where to start. Clear actions, clear outcomes, clear timeline.</p>
+      </div>
+      <div class="inside-card reveal">
+        <div class="inside-icon">📊</div>
+        <div class="inside-num">07</div>
+        <h3>LinkedIn Lead Tracker</h3>
+        <p>A simple tracking sheet to manage your pipeline — name, profile, date contacted, conversation stage, call status, and outcome.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOR / NOT FOR -->
+<section class="fit">
+  <div class="container">
+    <div class="fit-header reveal">
+      <span class="section-label">Right Fit?</span>
+      <h2 class="section-headline">This System <em>Is For You</em> If…</h2>
+    </div>
+    <div class="fit-grid">
+      <div class="fit-col fit-col--yes reveal">
+        <div class="fit-col-label">✓ &nbsp; This Is For You</div>
+        <div class="fit-item"><div class="fit-item-icon">✦</div><div>You want a predictable way to book calls without relying on ads</div></div>
+        <div class="fit-item"><div class="fit-item-icon">✦</div><div>You have an audience on LinkedIn but aren't converting them</div></div>
+        <div class="fit-item"><div class="fit-item-icon">✦</div><div>You're ready to implement a repeatable outreach process</div></div>
+        <div class="fit-item"><div class="fit-item-icon">✦</div><div>You want to delegate this work to a VA and step back</div></div>
+        <div class="fit-item"><div class="fit-item-icon">✦</div><div>You prefer systems over grinding content daily</div></div>
+      </div>
+      <div class="fit-col fit-col--no reveal">
+        <div class="fit-col-label">✗ &nbsp; This Is NOT For You</div>
+        <div class="fit-item"><div class="fit-item-icon" style="color:var(--muted);">—</div><div>You're looking for done-for-you implementation</div></div>
+        <div class="fit-item"><div class="fit-item-icon" style="color:var(--muted);">—</div><div>You want AI automation training (that's a separate product)</div></div>
+        <div class="fit-item"><div class="fit-item-icon" style="color:var(--muted);">—</div><div>You want 1:1 coaching or message reviews included</div></div>
+        <div class="fit-item"><div class="fit-item-icon" style="color:var(--muted);">—</div><div>You're not willing to invest time into the conversation process</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OFFER BOX -->
+<section class="offer" id="offer">
+  <div class="container">
+    <div class="offer-box reveal">
+      <p class="offer-eyebrow">Ready to Stop Leaving Clients in Your DMs?</p>
+      <h2 class="offer-title">DM to Done</h2>
+      <p class="offer-subtitle">DIY Client Acquisition System</p>
+
+      <div class="offer-includes">
+        <p class="offer-includes-label">Everything You Get — Instant Access</p>
+        <div class="offer-item"><div class="offer-item-check">✦</div>The DM to Done Framework (full strategy)</div>
+        <div class="offer-item"><div class="offer-item-check">✦</div>Client Targeting Workbook</div>
+        <div class="offer-item"><div class="offer-item-check">✦</div>15+ DM Scripts &amp; Conversation Templates</div>
+        <div class="offer-item"><div class="offer-item-check">✦</div>Visual Pipeline Map (one-page reference)</div>
+        <div class="offer-item"><div class="offer-item-check">✦</div>VA Delegation SOP</div>
+        <div class="offer-item"><div class="offer-item-check">✦</div>4-Week Implementation Checklist</div>
+        <div class="offer-item"><div class="offer-item-check">✦</div>LinkedIn Lead Tracker</div>
+      </div>
+
+      <div class="offer-price-wrap">
+        <div class="offer-price">$897</div>
+        <p class="offer-price-note">One-Time Investment &nbsp;·&nbsp; Lifetime Access</p>
+        <p class="offer-delivery">Delivered instantly via Google Drive &nbsp;·&nbsp; No AI training required &nbsp;·&nbsp; Fully delegate-ready</p>
+      </div>
+
+      <a href="#" class="offer-cta">Get DM to Done for $897 — Instant Access</a>
+      <p class="offer-guarantee">
+        <strong>No coaching. No fluff. No ongoing fees.</strong><br/>
+        This is a complete self-paced system. You bring the consistency — the system provides the strategy.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT'S NOT INCLUDED -->
+<section class="boundaries">
+  <div class="boundaries-inner reveal">
+    <h2>What This Does <em style="font-style:italic; color:var(--gold);">Not</em> Include</h2>
+    <p style="color:rgba(255,255,255,0.55); margin-bottom:32px; font-size:15px;">Transparency protects your time and mine.</p>
+    <div class="not-list">
+      <div class="not-item"><div class="not-item-x">✕</div> 1:1 coaching or message reviews</div>
+      <div class="not-item"><div class="not-item-x">✕</div> AI automation training (separate product)</div>
+      <div class="not-item"><div class="not-item-x">✕</div> LinkedIn profile audits</div>
+      <div class="not-item"><div class="not-item-x">✕</div> Done-for-you implementation</div>
+      <div class="not-item"><div class="not-item-x">✕</div> Ongoing support or community access</div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <div class="final-cta-bg"></div>
+  <div class="final-cta-content">
+    <h2 class="reveal">The Clients Are Already<br/><em>in Your Connections List.</em></h2>
+    <p class="reveal">You just need a system for the conversation in between. Get DM to Done today and start moving your LinkedIn connections toward real, paying clients — this week.</p>
+    <div class="reveal">
+      <a href="#offer" class="btn-primary">Get DM to Done for $897</a>
+    </div>
+    <p style="margin-top: 20px; font-size: 13px; color: var(--muted);" class="reveal">Instant Google Drive access &nbsp;·&nbsp; Self-paced &nbsp;·&nbsp; No AI required &nbsp;·&nbsp; Fully delegate-ready</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>&copy; Jori O&#x2019;Neale 2026 &nbsp;|&nbsp; <strong>DM to Done Client System</strong></p>
+</footer>
+
+<script>
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        // slight stagger for sibling groups
+        const siblings = entry.target.parentElement.querySelectorAll('.reveal');
+        let delay = 0;
+        siblings.forEach((s, idx) => { if (s === entry.target) delay = idx * 80; });
+        setTimeout(() => entry.target.classList.add('visible'), Math.min(delay, 320));
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => observer.observe(el));
+
+  // Smooth nav highlight
+  const navCta = document.querySelector('.nav-cta');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 80) {
+      navCta.style.animation = 'pulse 2s ease-in-out infinite';
+    }
+  });
+</script>
+</body>
+</html>
